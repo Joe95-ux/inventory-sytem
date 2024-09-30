@@ -1,18 +1,15 @@
 import React, { ChangeEvent, FormEvent, useState } from "react";
+import {modalSchema, ModalSchemaType} from "./modalSchema";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { v4 } from "uuid";
 import Header from "@/app/(components)/Header";
 
-type ProductFormData = {
-  name: string;
-  price: number;
-  stockQuantity: number;
-  rating: number;
-};
 
 type CreateProductModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (formData: ProductFormData) => void;
+  onCreate: (formData: ModalSchemaType) => void;
 };
 
 const CreateProductModal = ({
@@ -20,28 +17,23 @@ const CreateProductModal = ({
   onClose,
   onCreate,
 }: CreateProductModalProps) => {
-  const [formData, setFormData] = useState({
-    productId: v4(),
-    name: "",
-    price: 0,
-    stockQuantity: 0,
-    rating: 0,
+  // Use React Hook Form and Zod for validation
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ModalSchemaType>({
+    resolver: zodResolver(modalSchema),
+    defaultValues: {
+      name: "",
+      price: 0,
+      stockQuantity: 0,
+      rating: 0,
+    },
   });
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]:
-        name === "price" || name === "stockQuantity" || name === "rating"
-          ? parseFloat(value)
-          : value,
-    });
-  };
-
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    onCreate(formData);
+  const onSubmit = (data: ModalSchemaType) => {
+    onCreate({ ...data, productId: v4() });
     onClose();
   };
 
@@ -55,34 +47,36 @@ const CreateProductModal = ({
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-20">
       <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <Header name="Create New Product" />
-        <form onSubmit={handleSubmit} className="mt-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-5">
           {/* PRODUCT NAME */}
-          <label htmlFor="productName" className={labelCssStyles}>
+          <label htmlFor="name" className={labelCssStyles}>
             Product Name
           </label>
           <input
             type="text"
-            name="name"
+            id="name"
             placeholder="Name"
-            onChange={handleChange}
-            value={formData.name}
+            {...register("name")}
             className={inputCssStyles}
-            required
           />
+          {errors.name && (
+            <p className="text-red-600 text-sm">{errors.name.message}</p>
+          )}
 
           {/* PRICE */}
-          <label htmlFor="productPrice" className={labelCssStyles}>
+          <label htmlFor="price" className={labelCssStyles}>
             Price
           </label>
           <input
             type="number"
-            name="price"
+            id="price"
             placeholder="Price"
-            onChange={handleChange}
-            value={formData.price}
+            {...register("price", { valueAsNumber: true })}
             className={inputCssStyles}
-            required
           />
+          {errors.price && (
+            <p className="text-red-600 text-sm">{errors.price.message}</p>
+          )}
 
           {/* STOCK QUANTITY */}
           <label htmlFor="stockQuantity" className={labelCssStyles}>
@@ -90,13 +84,16 @@ const CreateProductModal = ({
           </label>
           <input
             type="number"
-            name="stockQuantity"
+            id="stockQuantity"
             placeholder="Stock Quantity"
-            onChange={handleChange}
-            value={formData.stockQuantity}
+            {...register("stockQuantity", { valueAsNumber: true })}
             className={inputCssStyles}
-            required
           />
+          {errors.stockQuantity && (
+            <p className="text-red-600 text-sm">
+              {errors.stockQuantity.message}
+            </p>
+          )}
 
           {/* RATING */}
           <label htmlFor="rating" className={labelCssStyles}>
@@ -104,13 +101,14 @@ const CreateProductModal = ({
           </label>
           <input
             type="number"
-            name="rating"
+            id="rating"
             placeholder="Rating"
-            onChange={handleChange}
-            value={formData.rating}
+            {...register("rating", { valueAsNumber: true })}
             className={inputCssStyles}
-            required
           />
+          {errors.rating && (
+            <p className="text-red-600 text-sm">{errors.rating.message}</p>
+          )}
 
           {/* CREATE ACTIONS */}
           <button
